@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Satellite, Users, Radio, ChevronDown, ChevronUp } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Alert {
   id: string;
@@ -55,17 +56,88 @@ const mockAlerts: Alert[] = [
 ];
 
 const FloodAlerts = () => {
-  const [alerts, setAlerts] = useState<Alert[]>(mockAlerts);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Simulate real-time updates
+  // Fetch initial alerts and set up real-time subscription
   useEffect(() => {
-    const interval = setInterval(() => {
-      // In production: fetch from /api/alerts or websocket
-      console.log("Polling for new alerts...");
-    }, 30000); // Poll every 30s
+    const fetchAlerts = async () => {
+      console.log("Fetching alerts from database...");
+      const { data, error } = await supabase
+        .from("flood_alerts")
+        .select("*")
+        .order("time", { ascending: false })
+        .limit(10);
 
-    return () => clearInterval(interval);
+      if (error) {
+        console.error("Error fetching alerts:", error);
+        setLoading(false);
+        return;
+      }
+
+      const formattedAlerts: Alert[] = (data || []).map((alert) => ({
+        id: alert.id,
+        time: new Date(alert.time).toLocaleString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        }),
+        description: alert.description,
+        severity: alert.severity as Alert["severity"],
+        source: alert.source as Alert["source"],
+        details: {
+          actions: alert.actions || [],
+          affectedAreas: alert.affected_areas || [],
+        },
+      }));
+
+      setAlerts(formattedAlerts);
+      setLoading(false);
+    };
+
+    fetchAlerts();
+
+    // Set up real-time subscription for new alerts
+    const channel = supabase
+      .channel("flood_alerts_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "flood_alerts",
+        },
+        (payload) => {
+          console.log("New alert received:", payload);
+          const newAlert = payload.new;
+          const formattedAlert: Alert = {
+            id: newAlert.id,
+            time: new Date(newAlert.time).toLocaleString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            }),
+            description: newAlert.description,
+            severity: newAlert.severity,
+            source: newAlert.source,
+            details: {
+              actions: newAlert.actions || [],
+              affectedAreas: newAlert.affected_areas || [],
+            },
+          };
+          setAlerts((prev) => [formattedAlert, ...prev]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const getSeverityColor = (severity: Alert["severity"]) => {
@@ -102,7 +174,16 @@ const FloodAlerts = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {alerts.map((alert) => (
+        {loading ? (
+          <div className="text-center py-8 text-muted-foreground">
+            Loading alerts...
+          </div>
+        ) : alerts.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            No active alerts at this time
+          </div>
+        ) : (
+          alerts.map((alert) => (
           <Collapsible
             key={alert.id}
             open={expandedId === alert.id}
@@ -166,7 +247,8 @@ const FloodAlerts = () => {
               </CardContent>
             </Card>
           </Collapsible>
-        ))}
+          ))
+        )}
       </CardContent>
     </Card>
   );

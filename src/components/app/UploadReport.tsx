@@ -5,6 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Camera, Upload, CheckCircle, Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { supabase } from "@/integrations/supabase/client";
+import { useGeolocation } from "@/hooks/useGeolocation";
+import { useToast } from "@/hooks/use-toast";
 
 const UploadReport = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -15,6 +18,8 @@ const UploadReport = () => {
     severity: string;
     reach: string;
   } | null>(null);
+  const { location } = useGeolocation();
+  const { toast } = useToast();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -46,30 +51,68 @@ const UploadReport = () => {
   };
 
   const handleUpload = async () => {
-    if (!file) return;
+    if (!file || !preview) return;
 
     setUploading(true);
     setProgress(0);
+    setResult(null);
 
-    // Simulate upload and AI processing
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          return 100;
-        }
-        return prev + 10;
+    try {
+      // Simulate upload progress
+      const interval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 90) {
+            clearInterval(interval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 200);
+
+      // Call AI classification edge function
+      const { data, error } = await supabase.functions.invoke("classify-flood-image", {
+        body: {
+          imageBase64: preview,
+          latitude: location?.latitude || 40.7128,
+          longitude: location?.longitude || -74.006,
+        },
       });
-    }, 200);
 
-    // Mock API call to /api/reports
-    setTimeout(() => {
-      setUploading(false);
+      clearInterval(interval);
+      setProgress(100);
+
+      if (error) {
+        console.error("Classification error:", error);
+        toast({
+          title: "Error",
+          description: "Failed to analyze image. Please try again.",
+          variant: "destructive",
+        });
+        setUploading(false);
+        return;
+      }
+
+      console.log("Classification result:", data);
+
       setResult({
-        severity: "Medium",
-        reach: "~500 nearby users notified",
+        severity: data.severity.charAt(0).toUpperCase() + data.severity.slice(1),
+        reach: `~${data.reach} nearby users notified`,
       });
-    }, 2000);
+
+      toast({
+        title: "Report Submitted",
+        description: `Classified as ${data.severity} severity with ${data.confidence}% confidence`,
+      });
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit report. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (

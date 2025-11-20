@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { MessageSquare, Smile, Frown, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const FeedbackForm = () => {
   const [name, setName] = useState("");
@@ -16,31 +18,58 @@ const FeedbackForm = () => {
     label: string;
     score: number;
   } | null>(null);
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     setSentiment(null);
 
-    // Mock API calls to /api/feedback and /api/sentiment
-    setTimeout(() => {
-      // Simulate sentiment analysis
-      const mockSentiment = feedback.toLowerCase().includes("good") ||
-        feedback.toLowerCase().includes("great") ||
-        feedback.toLowerCase().includes("thank")
-        ? { label: "positive", score: 0.85 }
-        : { label: "negative", score: 0.65 };
+    try {
+      // Call sentiment analysis edge function
+      const { data, error } = await supabase.functions.invoke("analyze-sentiment", {
+        body: {
+          name,
+          location,
+          message: feedback,
+        },
+      });
 
-      setSentiment(mockSentiment);
-      setSubmitting(false);
+      if (error) {
+        console.error("Sentiment analysis error:", error);
+        toast({
+          title: "Error",
+          description: "Failed to submit feedback. Please try again.",
+          variant: "destructive",
+        });
+        setSubmitting(false);
+        return;
+      }
 
-      // Clear form
+      console.log("Sentiment result:", data);
+
+      setSentiment({
+        label: data.sentiment,
+        score: data.score,
+      });
+
+      // Clear form after delay
       setTimeout(() => {
         setName("");
         setLocation("");
         setFeedback("");
-      }, 3000);
-    }, 1500);
+        setSentiment(null);
+      }, 5000);
+    } catch (error) {
+      console.error("Submission error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit feedback. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const isFormValid = name.trim() && location.trim() && feedback.trim();
