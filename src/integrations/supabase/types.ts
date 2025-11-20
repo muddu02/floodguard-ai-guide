@@ -14,7 +14,156 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      feedback: {
+        Row: {
+          created_at: string
+          id: string
+          location: string
+          message: string
+          name: string
+          sentiment: string | null
+          sentiment_score: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          location: string
+          message: string
+          name: string
+          sentiment?: string | null
+          sentiment_score?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location?: string
+          message?: string
+          name?: string
+          sentiment?: string | null
+          sentiment_score?: number | null
+        }
+        Relationships: []
+      }
+      flood_alerts: {
+        Row: {
+          actions: string[]
+          affected_areas: string[]
+          created_at: string
+          description: string
+          id: string
+          latitude: number | null
+          longitude: number | null
+          severity: Database["public"]["Enums"]["alert_severity"]
+          source: Database["public"]["Enums"]["alert_source"]
+          time: string
+          updated_at: string
+        }
+        Insert: {
+          actions?: string[]
+          affected_areas?: string[]
+          created_at?: string
+          description: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          severity: Database["public"]["Enums"]["alert_severity"]
+          source: Database["public"]["Enums"]["alert_source"]
+          time?: string
+          updated_at?: string
+        }
+        Update: {
+          actions?: string[]
+          affected_areas?: string[]
+          created_at?: string
+          description?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          severity?: Database["public"]["Enums"]["alert_severity"]
+          source?: Database["public"]["Enums"]["alert_source"]
+          time?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      flood_reports: {
+        Row: {
+          classification: string | null
+          confidence: number | null
+          created_at: string
+          id: string
+          image_url: string
+          latitude: number | null
+          longitude: number | null
+          notified_users: number | null
+          severity: string | null
+        }
+        Insert: {
+          classification?: string | null
+          confidence?: number | null
+          created_at?: string
+          id?: string
+          image_url: string
+          latitude?: number | null
+          longitude?: number | null
+          notified_users?: number | null
+          severity?: string | null
+        }
+        Update: {
+          classification?: string | null
+          confidence?: number | null
+          created_at?: string
+          id?: string
+          image_url?: string
+          latitude?: number | null
+          longitude?: number | null
+          notified_users?: number | null
+          severity?: string | null
+        }
+        Relationships: []
+      }
+      safe_shelters: {
+        Row: {
+          address: string | null
+          created_at: string
+          current_capacity: number
+          direction: string | null
+          distance_km: number | null
+          id: string
+          latitude: number
+          longitude: number
+          max_capacity: number
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          current_capacity?: number
+          direction?: string | null
+          distance_km?: number | null
+          id?: string
+          latitude: number
+          longitude: number
+          max_capacity: number
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          current_capacity?: number
+          direction?: string | null
+          distance_km?: number | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          max_capacity?: number
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +172,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      alert_severity: "high" | "medium" | "low"
+      alert_source: "satellite" | "citizen" | "sensor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +300,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      alert_severity: ["high", "medium", "low"],
+      alert_source: ["satellite", "citizen", "sensor"],
+    },
   },
 } as const

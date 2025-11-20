@@ -2,51 +2,54 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin, Navigation, Users, CheckCircle } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useGeolocation } from "@/hooks/useGeolocation";
 
 interface Shelter {
   id: string;
   name: string;
-  capacity: { current: number; max: number };
-  distance: string;
+  current_capacity: number;
+  max_capacity: number;
+  distance_km: number;
   direction: string;
-  lat: number;
-  lng: number;
+  latitude: number;
+  longitude: number;
+  address?: string;
 }
-
-// Mock data - would come from /api/shelters?lat=...&lng=...
-const mockShelters: Shelter[] = [
-  {
-    id: "1",
-    name: "Central Community Center",
-    capacity: { current: 45, max: 100 },
-    distance: "3.2 km",
-    direction: "NE",
-    lat: 40.7128,
-    lng: -74.006,
-  },
-  {
-    id: "2",
-    name: "Westside Emergency Shelter",
-    capacity: { current: 78, max: 120 },
-    distance: "5.8 km",
-    direction: "W",
-    lat: 40.715,
-    lng: -74.015,
-  },
-  {
-    id: "3",
-    name: "North District Safe Haven",
-    capacity: { current: 32, max: 80 },
-    distance: "7.1 km",
-    direction: "N",
-    lat: 40.725,
-    lng: -74.002,
-  },
-];
 
 const SafeShelters = () => {
   const [filter, setFilter] = useState<"nearest" | "available">("nearest");
+  const [shelters, setShelters] = useState<Shelter[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { location, loading: locationLoading } = useGeolocation();
+
+  useEffect(() => {
+    const fetchShelters = async () => {
+      if (locationLoading || !location) return;
+
+      console.log("Fetching nearby shelters...");
+      
+      const { data, error } = await supabase.functions.invoke("get-nearby-shelters", {
+        body: {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          limit: 10,
+        },
+      });
+
+      if (error) {
+        console.error("Error fetching shelters:", error);
+        setLoading(false);
+        return;
+      }
+
+      setShelters(data.shelters || []);
+      setLoading(false);
+    };
+
+    fetchShelters();
+  }, [location, locationLoading]);
 
   const getCapacityColor = (current: number, max: number) => {
     const percentage = (current / max) * 100;
@@ -56,17 +59,23 @@ const SafeShelters = () => {
   };
 
   const handleNavigate = (shelter: Shelter) => {
-    // In production: open map with directions
     window.open(
-      `https://www.google.com/maps/dir/?api=1&destination=${shelter.lat},${shelter.lng}`,
+      `https://www.google.com/maps/dir/?api=1&destination=${shelter.latitude},${shelter.longitude}`,
       "_blank"
     );
   };
 
   const handleReserve = (shelter: Shelter) => {
-    // Mock reservation
     alert(`Reservation request sent for ${shelter.name}`);
   };
+
+  const displayedShelters = filter === "available"
+    ? [...shelters].sort((a, b) => {
+        const aAvailable = a.max_capacity - a.current_capacity;
+        const bAvailable = b.max_capacity - b.current_capacity;
+        return bAvailable - aAvailable;
+      })
+    : shelters;
 
   return (
     <Card className="shadow-medium">
@@ -95,7 +104,16 @@ const SafeShelters = () => {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {mockShelters.map((shelter) => (
+        {loading || locationLoading ? (
+          <div className="text-center py-8 text-muted-foreground">
+            {location?.error || "Loading shelters..."}
+          </div>
+        ) : displayedShelters.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            No shelters found nearby
+          </div>
+        ) : (
+          displayedShelters.map((shelter) => (
           <Card
             key={shelter.id}
             className="card-hover border-l-4 border-l-accent/50"
@@ -109,16 +127,16 @@ const SafeShelters = () => {
                   <div className="flex flex-wrap gap-3 text-sm">
                     <span
                       className={`flex items-center gap-1 font-medium ${getCapacityColor(
-                        shelter.capacity.current,
-                        shelter.capacity.max
+                        shelter.current_capacity,
+                        shelter.max_capacity
                       )}`}
                     >
                       <Users className="w-4 h-4" />
-                      {shelter.capacity.current} / {shelter.capacity.max}
+                      {shelter.current_capacity} / {shelter.max_capacity}
                     </span>
                     <span className="flex items-center gap-1 text-muted-foreground">
                       <Navigation className="w-4 h-4" />
-                      {shelter.distance} {shelter.direction}
+                      {shelter.distance_km} km {shelter.direction}
                     </span>
                   </div>
                 </div>
@@ -148,7 +166,8 @@ const SafeShelters = () => {
               </div>
             </CardContent>
           </Card>
-        ))}
+          ))
+        )}
       </CardContent>
     </Card>
   );
