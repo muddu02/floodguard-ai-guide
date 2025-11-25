@@ -1,10 +1,11 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { MapPin, Navigation, Users, CheckCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useGeolocation } from "@/hooks/useGeolocation";
+import { cn } from "@/lib/utils";
 
 interface Shelter {
   id: string;
@@ -178,19 +179,15 @@ const SafeShelters = () => {
               </div>
 
               <div className="flex gap-2">
-                <Button
-                  className="flex-1"
-                  asChild
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${shelter.latitude},${shelter.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cn(buttonVariants({ variant: "default" }), "flex-1")}
                 >
-                  <a
-                    href={`https://www.google.com/maps/dir/?api=1&destination=${shelter.latitude},${shelter.longitude}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Navigation className="w-4 h-4 mr-2" />
-                    Navigate
-                  </a>
-                </Button>
+                  <Navigation className="w-4 h-4 mr-2" />
+                  Navigate
+                </a>
                 <Button
                   variant="outline"
                   className="flex-1"
