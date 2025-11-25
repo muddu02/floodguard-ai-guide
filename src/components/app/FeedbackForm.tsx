@@ -4,72 +4,49 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageSquare, Smile, Frown, Loader2 } from "lucide-react";
+import { MessageSquare, Smile, Frown, Meh } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import Sentiment from "sentiment";
 
 const FeedbackForm = () => {
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
   const [feedback, setFeedback] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [sentiment, setSentiment] = useState<{
+  const [sentimentResult, setSentimentResult] = useState<{
     label: string;
     score: number;
   } | null>(null);
-  const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    setSentiment(null);
+    setSentimentResult(null);
 
-    try {
-      // Call sentiment analysis edge function
-      const { data, error } = await supabase.functions.invoke("analyze-sentiment", {
-        body: {
-          name,
-          location,
-          message: feedback,
-        },
+    // Client-side sentiment analysis using sentiment package
+    setTimeout(() => {
+      const sentiment = new Sentiment();
+      const result = sentiment.analyze(feedback);
+      
+      let label = "neutral";
+      if (result.score > 0) label = "positive";
+      else if (result.score < 0) label = "negative";
+
+      setSentimentResult({
+        label,
+        score: Math.abs(result.score),
       });
 
-      if (error) {
-        console.error("Sentiment analysis error:", error);
-        toast({
-          title: "Error",
-          description: "Failed to submit feedback. Please try again.",
-          variant: "destructive",
-        });
-        setSubmitting(false);
-        return;
-      }
-
-      console.log("Sentiment result:", data);
-
-      setSentiment({
-        label: data.sentiment,
-        score: data.score,
-      });
+      setSubmitting(false);
 
       // Clear form after delay
       setTimeout(() => {
         setName("");
         setLocation("");
         setFeedback("");
-        setSentiment(null);
+        setSentimentResult(null);
       }, 5000);
-    } catch (error) {
-      console.error("Submission error:", error);
-      toast({
-        title: "Error",
-        description: "Failed to submit feedback. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setSubmitting(false);
-    }
+    }, 500);
   };
 
   const isFormValid = name.trim() && location.trim() && feedback.trim();
@@ -83,22 +60,46 @@ const FeedbackForm = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {sentiment ? (
+        {sentimentResult ? (
           <div className="space-y-4 animate-fade-in">
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-6 text-center space-y-3">
-              {sentiment.label === "positive" ? (
-                <Smile className="w-16 h-16 text-green-500 mx-auto" />
+              {sentimentResult.label === "positive" ? (
+                <>
+                  <Smile className="w-16 h-16 text-green-500 mx-auto" />
+                  <div>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">
+                      Thank you! Your feedback sounds positive.
+                    </h3>
+                    <p className="text-muted-foreground">
+                      We're glad to hear you're having a good experience!
+                    </p>
+                  </div>
+                </>
+              ) : sentimentResult.label === "negative" ? (
+                <>
+                  <Frown className="w-16 h-16 text-red-500 mx-auto" />
+                  <div>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">
+                      Thanks for sharing. Your feedback seems negative and will help us improve.
+                    </h3>
+                    <p className="text-muted-foreground">
+                      We take your concerns seriously and will work to address them.
+                    </p>
+                  </div>
+                </>
               ) : (
-                <Frown className="w-16 h-16 text-orange-500 mx-auto" />
+                <>
+                  <Meh className="w-16 h-16 text-gray-500 mx-auto" />
+                  <div>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">
+                      Thank you for your feedback!
+                    </h3>
+                    <p className="text-muted-foreground">
+                      Your neutral feedback helps us understand your experience.
+                    </p>
+                  </div>
+                </>
               )}
-              <div>
-                <h3 className="text-xl font-semibold text-foreground mb-2">
-                  Thank you for your feedback!
-                </h3>
-                <p className="text-muted-foreground">
-                  We've analyzed your feedback
-                </p>
-              </div>
               <div className="flex items-center justify-center gap-2">
                 <span className="text-sm text-muted-foreground">
                   Sentiment:
@@ -106,16 +107,15 @@ const FeedbackForm = () => {
                 <Badge
                   variant="secondary"
                   className={
-                    sentiment.label === "positive"
+                    sentimentResult.label === "positive"
                       ? "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400"
-                      : "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-400"
+                      : sentimentResult.label === "negative"
+                      ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400"
+                      : "bg-gray-100 text-gray-700 dark:bg-gray-950 dark:text-gray-400"
                   }
                 >
-                  {sentiment.label.toUpperCase()}
+                  {sentimentResult.label.toUpperCase()}
                 </Badge>
-                <span className="text-sm font-medium">
-                  ({Math.round(sentiment.score * 100)}%)
-                </span>
               </div>
             </div>
           </div>
@@ -165,17 +165,8 @@ const FeedbackForm = () => {
               className="w-full"
               disabled={!isFormValid || submitting}
             >
-              {submitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Analyzing...
-                </>
-              ) : (
-                <>
-                  <MessageSquare className="w-4 h-4 mr-2" />
-                  Submit Feedback
-                </>
-              )}
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Submit Feedback
             </Button>
           </form>
         )}

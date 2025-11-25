@@ -25,30 +25,61 @@ const SafeShelters = () => {
   const { location, loading: locationLoading } = useGeolocation();
 
   useEffect(() => {
-    const fetchShelters = async () => {
-      if (locationLoading || !location) return;
+    // Use hardcoded sample shelters
+    if (locationLoading || !location) return;
 
-      console.log("Fetching nearby shelters...");
-      
-      const { data, error } = await supabase.functions.invoke("get-nearby-shelters", {
-        body: {
-          latitude: location.latitude,
-          longitude: location.longitude,
-          limit: 10,
-        },
-      });
+    console.log("Loading sample shelters for location:", location.latitude, location.longitude);
+    
+    // Calculate rough distances (demo values)
+    const sampleShelters: Shelter[] = [
+      {
+        id: "1",
+        name: "City Community Flood Shelter",
+        address: "123 Main Street, Downtown",
+        current_capacity: 45,
+        max_capacity: 200,
+        distance_km: 2.3,
+        direction: "North",
+        latitude: location.latitude + 0.02,
+        longitude: location.longitude + 0.01,
+      },
+      {
+        id: "2",
+        name: "Central Emergency Relief Center",
+        address: "456 Park Avenue, Central District",
+        current_capacity: 80,
+        max_capacity: 150,
+        distance_km: 3.7,
+        direction: "East",
+        latitude: location.latitude - 0.01,
+        longitude: location.longitude + 0.03,
+      },
+      {
+        id: "3",
+        name: "Riverside Safe Haven",
+        address: "789 River Road, West Side",
+        current_capacity: 120,
+        max_capacity: 180,
+        distance_km: 1.5,
+        direction: "West",
+        latitude: location.latitude + 0.01,
+        longitude: location.longitude - 0.02,
+      },
+      {
+        id: "4",
+        name: "Highland Evacuation Shelter",
+        address: "321 Hill Street, Highland Area",
+        current_capacity: 30,
+        max_capacity: 100,
+        distance_km: 4.2,
+        direction: "South",
+        latitude: location.latitude - 0.03,
+        longitude: location.longitude - 0.01,
+      },
+    ];
 
-      if (error) {
-        console.error("Error fetching shelters:", error);
-        setLoading(false);
-        return;
-      }
-
-      setShelters(data.shelters || []);
-      setLoading(false);
-    };
-
-    fetchShelters();
+    setShelters(sampleShelters);
+    setLoading(false);
   }, [location, locationLoading]);
 
   const getCapacityColor = (current: number, max: number) => {
@@ -124,6 +155,9 @@ const SafeShelters = () => {
                   <h3 className="font-semibold text-lg text-foreground">
                     {shelter.name}
                   </h3>
+                  {shelter.address && (
+                    <p className="text-sm text-muted-foreground">{shelter.address}</p>
+                  )}
                   <div className="flex flex-wrap gap-3 text-sm">
                     <span
                       className={`flex items-center gap-1 font-medium ${getCapacityColor(
@@ -132,13 +166,16 @@ const SafeShelters = () => {
                       )}`}
                     >
                       <Users className="w-4 h-4" />
-                      {shelter.current_capacity} / {shelter.max_capacity}
+                      Capacity: {shelter.max_capacity} people
                     </span>
                     <span className="flex items-center gap-1 text-muted-foreground">
                       <Navigation className="w-4 h-4" />
                       {shelter.distance_km} km {shelter.direction}
                     </span>
                   </div>
+                  <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400">
+                    Free Shelter
+                  </Badge>
                 </div>
                 
                 {/* Map Thumbnail Placeholder */}

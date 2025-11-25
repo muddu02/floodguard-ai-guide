@@ -5,11 +5,14 @@ import FloodAlerts from "@/components/app/FloodAlerts";
 import SafeShelters from "@/components/app/SafeShelters";
 import UploadReport from "@/components/app/UploadReport";
 import FeedbackForm from "@/components/app/FeedbackForm";
+import CurrentLocationMap from "@/components/app/CurrentLocationMap";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useGeolocation } from "@/hooks/useGeolocation";
 
 const AppPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { location, loading: locationLoading } = useGeolocation();
 
   return (
     <div className="min-h-screen bg-background">
@@ -58,6 +61,20 @@ const AppPage = () => {
           
           <div id="shelters-section">
             <SafeShelters />
+          </div>
+          
+          <div id="location-section">
+            {!locationLoading && location && !location.error && (
+              <CurrentLocationMap 
+                latitude={location.latitude} 
+                longitude={location.longitude} 
+              />
+            )}
+            {location?.error && (
+              <div className="text-center py-8 text-muted-foreground bg-card rounded-lg border border-border">
+                Location unavailable. Please enable location permissions.
+              </div>
+            )}
           </div>
           
           <div id="report-section">
