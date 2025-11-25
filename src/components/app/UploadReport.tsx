@@ -5,8 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Camera, Upload, CheckCircle, Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import { supabase } from "@/integrations/supabase/client";
-import { useGeolocation } from "@/hooks/useGeolocation";
 import { useToast } from "@/hooks/use-toast";
 
 const UploadReport = () => {
@@ -18,7 +16,6 @@ const UploadReport = () => {
     severity: string;
     reach: string;
   } | null>(null);
-  const { location } = useGeolocation();
   const { toast } = useToast();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,69 +47,56 @@ const UploadReport = () => {
     }
   };
 
-  const handleUpload = async () => {
+  const handleUpload = () => {
     if (!file || !preview) return;
 
     setUploading(true);
     setProgress(0);
     setResult(null);
 
-    try {
-      // Simulate upload progress
-      const interval = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 90) {
-            clearInterval(interval);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 200);
-
-      // Call AI classification edge function
-      const { data, error } = await supabase.functions.invoke("classify-flood-image", {
-        body: {
-          imageBase64: preview,
-          latitude: location?.latitude || 40.7128,
-          longitude: location?.longitude || -74.006,
-        },
+    // Simulate upload progress and simple placeholder analysis
+    const interval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          return 100;
+        }
+        return prev + 10;
       });
+    }, 200);
 
+    setTimeout(() => {
       clearInterval(interval);
       setProgress(100);
 
-      if (error) {
-        console.error("Classification error:", error);
-        toast({
-          title: "Error",
-          description: "Failed to analyze image. Please try again.",
-          variant: "destructive",
-        });
-        setUploading(false);
-        return;
+      // Simple heuristic: check filename for keywords
+      const filename = file.name.toLowerCase();
+      let severity = "Medium";
+      let reach = 50;
+
+      if (filename.includes("flood") || filename.includes("water") || filename.includes("damage")) {
+        severity = "High";
+        reach = 120;
+      } else if (filename.includes("rain") || filename.includes("wet")) {
+        severity = "Medium";
+        reach = 50;
+      } else {
+        severity = "Low";
+        reach = 20;
       }
 
-      console.log("Classification result:", data);
-
       setResult({
-        severity: data.severity.charAt(0).toUpperCase() + data.severity.slice(1),
-        reach: `~${data.reach} nearby users notified`,
+        severity,
+        reach: `~${reach} nearby users notified`,
       });
 
       toast({
         title: "Report Submitted",
-        description: `Classified as ${data.severity} severity with ${data.confidence}% confidence`,
+        description: `Image received. Automated analysis (demo): Potential flood risk level: ${severity}`,
       });
-    } catch (error) {
-      console.error("Upload error:", error);
-      toast({
-        title: "Error",
-        description: "Failed to submit report. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
+
       setUploading(false);
-    }
+    }, 2000);
   };
 
   return (

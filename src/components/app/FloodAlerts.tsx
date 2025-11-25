@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Satellite, Users, Radio, ChevronDown, ChevronUp } from "lucide-react";
+import { AlertTriangle, Satellite, Users, Radio, ChevronDown, ChevronUp, CloudRain, Thermometer } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
+import { useGeolocation } from "@/hooks/useGeolocation";
 
 interface Alert {
   id: string;
@@ -59,6 +60,59 @@ const FloodAlerts = () => {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [weather, setWeather] = useState<{
+    temperature: number;
+    condition: string;
+    humidity?: number;
+    windSpeed?: number;
+  } | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState(true);
+  const { location, loading: locationLoading } = useGeolocation();
+
+  // Fetch weather based on user location
+  useEffect(() => {
+    const fetchWeather = async () => {
+      if (locationLoading || !location) return;
+
+      try {
+        console.log("Fetching weather for location:", location.latitude, location.longitude);
+        const response = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${location.latitude}&longitude=${location.longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&timezone=auto`
+        );
+        
+        if (!response.ok) {
+          throw new Error("Failed to fetch weather");
+        }
+
+        const data = await response.json();
+        
+        // Map weather codes to conditions
+        const weatherCode = data.current.weather_code;
+        let condition = "Clear sky";
+        if (weatherCode >= 61 && weatherCode <= 67) condition = "Rain";
+        else if (weatherCode >= 71 && weatherCode <= 77) condition = "Snow";
+        else if (weatherCode >= 80 && weatherCode <= 82) condition = "Rain showers";
+        else if (weatherCode >= 95 && weatherCode <= 99) condition = "Thunderstorm";
+        else if (weatherCode >= 51 && weatherCode <= 57) condition = "Drizzle";
+        else if (weatherCode >= 1 && weatherCode <= 3) condition = "Partly cloudy";
+        else if (weatherCode === 45 || weatherCode === 48) condition = "Fog";
+
+        setWeather({
+          temperature: Math.round(data.current.temperature_2m),
+          condition,
+          humidity: data.current.relative_humidity_2m,
+          windSpeed: Math.round(data.current.wind_speed_10m),
+        });
+      } catch (error) {
+        console.error("Error fetching weather:", error);
+        setWeather(null);
+      } finally {
+        setWeatherLoading(false);
+      }
+    };
+
+    fetchWeather();
+  }, [location, locationLoading]);
 
   // Fetch initial alerts and set up real-time subscription
   useEffect(() => {
@@ -173,7 +227,49 @@ const FloodAlerts = () => {
           </span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-4">
+        {/* Local Weather Card */}
+        <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 border-blue-200 dark:border-blue-900">
+          <CardContent className="p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-2 flex-1">
+                <h3 className="font-semibold text-lg text-foreground flex items-center gap-2">
+                  <CloudRain className="w-5 h-5 text-blue-500" />
+                  Local Weather
+                </h3>
+                {weatherLoading ? (
+                  <p className="text-sm text-muted-foreground">Loading weather...</p>
+                ) : weather ? (
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-foreground">
+                      <Thermometer className="w-4 h-4" />
+                      <span className="text-2xl font-bold">{weather.temperature}°C</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Condition: {weather.condition}
+                    </p>
+                    {weather.humidity && (
+                      <p className="text-xs text-muted-foreground">
+                        Humidity: {weather.humidity}%
+                      </p>
+                    )}
+                    {weather.windSpeed && (
+                      <p className="text-xs text-muted-foreground">
+                        Wind: {weather.windSpeed} km/h
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Unable to fetch weather right now. Please try again later.
+                  </p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Alerts */}
         {loading ? (
           <div className="text-center py-8 text-muted-foreground">
             Loading alerts...
