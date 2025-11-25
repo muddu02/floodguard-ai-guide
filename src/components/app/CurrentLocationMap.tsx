@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { MapPin } from "lucide-react";
 import "leaflet/dist/leaflet.css";
@@ -53,21 +53,12 @@ const CurrentLocationMap = ({ latitude, longitude }: CurrentLocationMapProps) =>
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            <Marker position={[latitude, longitude]}>
-              <Popup>
-                <div className="text-center">
-                  <p className="font-semibold">You are here</p>
-                  <p className="text-xs text-muted-foreground">
-                    {latitude.toFixed(4)}, {longitude.toFixed(4)}
-                  </p>
-                </div>
-              </Popup>
-            </Marker>
+            <Marker position={[latitude, longitude]} />
             <MapUpdater latitude={latitude} longitude={longitude} />
           </MapContainer>
         </div>
         <p className="text-xs text-muted-foreground mt-2 text-center">
-          Live location • Click marker for coordinates
+          Live location: {latitude.toFixed(4)}, {longitude.toFixed(4)}
         </p>
       </CardContent>
     </Card>
