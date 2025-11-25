@@ -89,13 +89,6 @@ const SafeShelters = () => {
     return "text-alert-high";
   };
 
-  const handleNavigate = (shelter: Shelter) => {
-    window.open(
-      `https://www.google.com/maps/dir/?api=1&destination=${shelter.latitude},${shelter.longitude}`,
-      "_blank"
-    );
-  };
-
   const handleReserve = (shelter: Shelter) => {
     alert(`Reservation request sent for ${shelter.name}`);
   };
@@ -187,10 +180,16 @@ const SafeShelters = () => {
               <div className="flex gap-2">
                 <Button
                   className="flex-1"
-                  onClick={() => handleNavigate(shelter)}
+                  asChild
                 >
-                  <Navigation className="w-4 h-4 mr-2" />
-                  Navigate
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${shelter.latitude},${shelter.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Navigation className="w-4 h-4 mr-2" />
+                    Navigate
+                  </a>
                 </Button>
                 <Button
                   variant="outline"
