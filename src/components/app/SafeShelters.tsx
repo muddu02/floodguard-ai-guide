@@ -179,13 +179,14 @@ const SafeShelters = () => {
               </div>
 
               <div className="flex gap-2">
-                <Link
-                  to={`/directions?lat=${shelter.latitude}&lng=${shelter.longitude}&name=${encodeURIComponent(shelter.name)}&address=${encodeURIComponent(shelter.address || '')}`}
-                  className="flex-1 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-10 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90"
-                >
-                  <Navigation className="w-4 h-4" />
-                  Navigate
-                </Link>
+                <Button asChild className="flex-1">
+                  <Link
+                    to={`/directions?lat=${shelter.latitude}&lng=${shelter.longitude}&name=${encodeURIComponent(shelter.name)}&address=${encodeURIComponent(shelter.address || '')}`}
+                  >
+                    <Navigation className="w-4 h-4 mr-2" />
+                    Navigate
+                  </Link>
+                </Button>
                 <Button
                   variant="outline"
                   className="flex-1"
