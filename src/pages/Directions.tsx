@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -6,9 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, MapPin, Navigation } from "lucide-react";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import "leaflet/dist/leaflet.css";
-import "leaflet-routing-machine/dist/leaflet-routing-machine.css";
 import L from "leaflet";
-import "leaflet-routing-machine";
 
 // Fix for default marker icons
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
@@ -29,38 +27,42 @@ interface RoutingMachineProps {
 
 function RoutingMachine({ start, end }: RoutingMachineProps) {
   const map = useMap();
-  const routingControlRef = useRef<L.Routing.Control | null>(null);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     if (!map) return;
+    
+    // Import routing machine dynamically
+    import("leaflet-routing-machine").then((L_routing) => {
+      import("leaflet-routing-machine/dist/leaflet-routing-machine.css");
+      
+      const L_RM = (L_routing as any).default || L_routing;
+      
+      // Create routing control
+      const routingControl = L_RM.control({
+        waypoints: [L.latLng(start[0], start[1]), L.latLng(end[0], end[1])],
+        routeWhileDragging: false,
+        addWaypoints: false,
+        lineOptions: {
+          styles: [{ color: "#3b82f6", weight: 5, opacity: 0.7 }],
+          extendToWaypoints: true,
+          missingRouteTolerance: 0,
+        },
+        show: true,
+        collapsible: true,
+        fitSelectedRoutes: true,
+      }).addTo(map);
 
-    // Remove existing routing control if any
-    if (routingControlRef.current) {
-      map.removeControl(routingControlRef.current);
-    }
+      setIsReady(true);
 
-    // Create new routing control
-    const routingControl = L.Routing.control({
-      waypoints: [L.latLng(start[0], start[1]), L.latLng(end[0], end[1])],
-      routeWhileDragging: false,
-      addWaypoints: false,
-      lineOptions: {
-        styles: [{ color: "#3b82f6", weight: 5, opacity: 0.7 }],
-        extendToWaypoints: true,
-        missingRouteTolerance: 0,
-      },
-      show: true,
-      collapsible: true,
-      fitSelectedRoutes: true,
-    }).addTo(map);
-
-    routingControlRef.current = routingControl;
-
-    return () => {
-      if (routingControlRef.current) {
-        map.removeControl(routingControlRef.current);
-      }
-    };
+      return () => {
+        if (routingControl) {
+          map.removeControl(routingControl);
+        }
+      };
+    }).catch((error) => {
+      console.error("Error loading routing machine:", error);
+    });
   }, [map, start, end]);
 
   return null;
