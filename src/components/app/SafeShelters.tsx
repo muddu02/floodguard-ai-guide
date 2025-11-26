@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin, Navigation, Users, CheckCircle } from "lucide-react";
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useGeolocation } from "@/hooks/useGeolocation";
 
@@ -24,6 +24,7 @@ const SafeShelters = () => {
   const [shelters, setShelters] = useState<Shelter[]>([]);
   const [loading, setLoading] = useState(true);
   const { location, loading: locationLoading } = useGeolocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Use hardcoded sample shelters
@@ -92,6 +93,10 @@ const SafeShelters = () => {
 
   const handleReserve = (shelter: Shelter) => {
     alert(`Reservation request sent for ${shelter.name}`);
+  };
+
+  const handleNavigate = (shelter: Shelter) => {
+    navigate(`/directions?lat=${shelter.latitude}&lng=${shelter.longitude}&name=${encodeURIComponent(shelter.name)}&address=${encodeURIComponent(shelter.address || '')}`);
   };
 
   const displayedShelters = filter === "available"
@@ -179,13 +184,12 @@ const SafeShelters = () => {
               </div>
 
               <div className="flex gap-2">
-                <Button asChild className="flex-1">
-                  <Link
-                    to={`/directions?lat=${shelter.latitude}&lng=${shelter.longitude}&name=${encodeURIComponent(shelter.name)}&address=${encodeURIComponent(shelter.address || '')}`}
-                  >
-                    <Navigation className="w-4 h-4 mr-2" />
-                    Navigate
-                  </Link>
+                <Button 
+                  className="flex-1"
+                  onClick={() => handleNavigate(shelter)}
+                >
+                  <Navigation className="w-4 h-4 mr-2" />
+                  Navigate
                 </Button>
                 <Button
                   variant="outline"
