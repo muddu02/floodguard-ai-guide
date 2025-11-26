@@ -305,7 +305,10 @@ const FloodAlerts = () => {
                     </p>
                     <p className="text-sm text-muted-foreground">{alert.time}</p>
                   </div>
-                  <CollapsibleTrigger asChild>
+                  {/* FIX: Removed 'asChild' prop which was causing "r is not a function" error.
+                      The asChild pattern expects specific child structure that was conflicting 
+                      with Button's internal implementation, causing React context consumer error. */}
+                  <CollapsibleTrigger>
                     <Button variant="ghost" size="sm" className="shrink-0">
                       {expandedId === alert.id ? (
                         <ChevronUp className="w-4 h-4" />
