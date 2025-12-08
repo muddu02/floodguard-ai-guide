@@ -3,7 +3,6 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Satellite, Users, Radio, ChevronDown, ChevronUp, CloudRain, Thermometer } from "lucide-react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
 import { useGeolocation } from "@/hooks/useGeolocation";
 
@@ -18,43 +17,6 @@ interface Alert {
     affectedAreas: string[];
   };
 }
-
-// Mock data - would come from /api/alerts
-const mockAlerts: Alert[] = [
-  {
-    id: "1",
-    time: "11:32 AM — Nov 20, 2025",
-    description: "Severe overflow on Riverbank Rd",
-    severity: "high",
-    source: "satellite",
-    details: {
-      actions: ["Evacuate immediately", "Move to higher ground", "Avoid Riverbank Rd area"],
-      affectedAreas: ["Riverbank Rd", "Downtown district", "East Bridge"],
-    },
-  },
-  {
-    id: "2",
-    time: "10:15 AM — Nov 20, 2025",
-    description: "Water level rising near Central Park",
-    severity: "medium",
-    source: "sensor",
-    details: {
-      actions: ["Monitor situation", "Prepare emergency kit", "Stay informed"],
-      affectedAreas: ["Central Park", "Park Avenue", "Green Street"],
-    },
-  },
-  {
-    id: "3",
-    time: "08:45 AM — Nov 20, 2025",
-    description: "Minor flooding reported on Oak Street",
-    severity: "low",
-    source: "citizen",
-    details: {
-      actions: ["Avoid area if possible", "Drive carefully"],
-      affectedAreas: ["Oak Street", "Maple Avenue"],
-    },
-  },
-];
 
 const FloodAlerts = () => {
   const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -216,6 +178,10 @@ const FloodAlerts = () => {
     }
   };
 
+  const toggleExpand = (alertId: string) => {
+    setExpandedId(expandedId === alertId ? null : alertId);
+  };
+
   return (
     <Card className="shadow-medium">
       <CardHeader>
@@ -280,14 +246,10 @@ const FloodAlerts = () => {
           </div>
         ) : (
           alerts.map((alert) => (
-          <Collapsible
-            key={alert.id}
-            open={expandedId === alert.id}
-            onOpenChange={() =>
-              setExpandedId(expandedId === alert.id ? null : alert.id)
-            }
-          >
-            <Card className="card-hover border-l-4 border-l-transparent hover:border-l-primary">
+            <Card 
+              key={alert.id} 
+              className="card-hover border-l-4 border-l-transparent hover:border-l-primary"
+            >
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 space-y-2">
@@ -305,47 +267,51 @@ const FloodAlerts = () => {
                     </p>
                     <p className="text-sm text-muted-foreground">{alert.time}</p>
                   </div>
-                  {/* FIX: Removed 'asChild' prop which was causing "r is not a function" error.
-                      The asChild pattern expects specific child structure that was conflicting 
-                      with Button's internal implementation, causing React context consumer error. */}
-                  <CollapsibleTrigger>
-                    <Button variant="ghost" size="sm" className="shrink-0">
-                      {expandedId === alert.id ? (
-                        <ChevronUp className="w-4 h-4" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4" />
-                      )}
-                    </Button>
-                  </CollapsibleTrigger>
+                  {/* FIX: Replaced Radix Collapsible with simple state toggle.
+                      The Radix Collapsible + shadcn Button combination was causing 
+                      "r is not a function" error due to conflicting Slot implementations. */}
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="shrink-0"
+                    onClick={() => toggleExpand(alert.id)}
+                  >
+                    {expandedId === alert.id ? (
+                      <ChevronUp className="w-4 h-4" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4" />
+                    )}
+                  </Button>
                 </div>
 
-                <CollapsibleContent className="space-y-3 animate-fade-in">
-                  <div>
-                    <h4 className="text-sm font-semibold mb-2 text-foreground">
-                      Suggested Actions:
-                    </h4>
-                    <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                      {alert.details.actions.map((action, idx) => (
-                        <li key={idx}>{action}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold mb-2 text-foreground">
-                      Affected Areas:
-                    </h4>
-                    <div className="flex flex-wrap gap-2">
-                      {alert.details.affectedAreas.map((area, idx) => (
-                        <Badge key={idx} variant="secondary">
-                          {area}
-                        </Badge>
-                      ))}
+                {expandedId === alert.id && (
+                  <div className="space-y-3 animate-fade-in">
+                    <div>
+                      <h4 className="text-sm font-semibold mb-2 text-foreground">
+                        Suggested Actions:
+                      </h4>
+                      <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                        {alert.details.actions.map((action, idx) => (
+                          <li key={idx}>{action}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold mb-2 text-foreground">
+                        Affected Areas:
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {alert.details.affectedAreas.map((area, idx) => (
+                          <Badge key={idx} variant="secondary">
+                            {area}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </CollapsibleContent>
+                )}
               </CardContent>
             </Card>
-          </Collapsible>
           ))
         )}
       </CardContent>
