@@ -3,7 +3,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin, Navigation, Users, CheckCircle } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useGeolocation } from "@/hooks/useGeolocation";
 
@@ -24,7 +23,6 @@ const SafeShelters = () => {
   const [shelters, setShelters] = useState<Shelter[]>([]);
   const [loading, setLoading] = useState(true);
   const { location, loading: locationLoading } = useGeolocation();
-  const navigate = useNavigate();
 
   useEffect(() => {
     // Use hardcoded sample shelters
@@ -95,8 +93,10 @@ const SafeShelters = () => {
     alert(`Reservation request sent for ${shelter.name}`);
   };
 
+  // Opens Google Maps directions in a new tab
   const handleNavigate = (shelter: Shelter) => {
-    navigate(`/directions?lat=${shelter.latitude}&lng=${shelter.longitude}&name=${encodeURIComponent(shelter.name)}&address=${encodeURIComponent(shelter.address || '')}`);
+    const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${shelter.latitude},${shelter.longitude}`;
+    window.open(mapsUrl, "_blank", "noopener,noreferrer");
   };
 
   const displayedShelters = filter === "available"
