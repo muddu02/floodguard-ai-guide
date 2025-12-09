@@ -122,6 +122,48 @@ export type Database = {
         }
         Relationships: []
       }
+      flood_risk_predictions: {
+        Row: {
+          created_at: string
+          distance_to_river_km: number
+          elevation_m: number
+          historical_flood_events: number
+          id: string
+          population_density_per_sqkm: number
+          predicted_risk_label: string
+          predicted_risk_score: number
+          rainfall_mm_last_24h: number
+          river_level_m: number
+          soil_moisture_pct: number
+        }
+        Insert: {
+          created_at?: string
+          distance_to_river_km: number
+          elevation_m: number
+          historical_flood_events: number
+          id?: string
+          population_density_per_sqkm: number
+          predicted_risk_label: string
+          predicted_risk_score: number
+          rainfall_mm_last_24h: number
+          river_level_m: number
+          soil_moisture_pct: number
+        }
+        Update: {
+          created_at?: string
+          distance_to_river_km?: number
+          elevation_m?: number
+          historical_flood_events?: number
+          id?: string
+          population_density_per_sqkm?: number
+          predicted_risk_label?: string
+          predicted_risk_score?: number
+          rainfall_mm_last_24h?: number
+          river_level_m?: number
+          soil_moisture_pct?: number
+        }
+        Relationships: []
+      }
       safe_shelters: {
         Row: {
           address: string | null

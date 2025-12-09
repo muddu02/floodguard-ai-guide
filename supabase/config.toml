@@ -1,1 +1,13 @@
 project_id = "yccisxujmbkveercrydc"
+
+[functions.analyze-sentiment]
+verify_jwt = false
+
+[functions.classify-flood-image]
+verify_jwt = false
+
+[functions.get-nearby-shelters]
+verify_jwt = false
+
+[functions.flood-predict]
+verify_jwt = false

@@ -1,0 +1,30 @@
+{
+  "model_type": "RandomForest",
+  "feature_columns": [
+    "rainfall_mm_last_24h",
+    "river_level_m",
+    "soil_moisture_pct",
+    "elevation_m",
+    "distance_to_river_km",
+    "population_density_per_sqkm",
+    "historical_flood_events"
+  ],
+  "labels": ["Low", "Medium", "High"],
+  "feature_weights": [0.22, 0.18, 0.14, 0.16, 0.12, 0.06, 0.12],
+  "feature_importances": [0.22, 0.18, 0.14, 0.16, 0.12, 0.06, 0.12],
+  "scaler_mean": [150.0, 4.25, 55.0, 250.5, 10.05, 5025.0, 7.5],
+  "scaler_scale": [86.6, 2.17, 26.0, 144.3, 5.77, 2887.0, 4.33],
+  "thresholds": {
+    "low_medium": 0.35,
+    "medium_high": 0.65
+  },
+  "feature_ranges": {
+    "rainfall_mm_last_24h": {"min": 0, "max": 300, "risk_direction": "higher"},
+    "river_level_m": {"min": 0.5, "max": 8.0, "risk_direction": "higher"},
+    "soil_moisture_pct": {"min": 10, "max": 100, "risk_direction": "higher"},
+    "elevation_m": {"min": 1, "max": 500, "risk_direction": "lower"},
+    "distance_to_river_km": {"min": 0.1, "max": 20, "risk_direction": "lower"},
+    "population_density_per_sqkm": {"min": 50, "max": 10000, "risk_direction": "higher"},
+    "historical_flood_events": {"min": 0, "max": 15, "risk_direction": "higher"}
+  }
+}
