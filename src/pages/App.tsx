@@ -6,6 +6,8 @@ import SafeShelters from "@/components/app/SafeShelters";
 import UploadReport from "@/components/app/UploadReport";
 import FeedbackForm from "@/components/app/FeedbackForm";
 import CurrentLocationMap from "@/components/app/CurrentLocationMap";
+import FloodRiskForm from "@/components/app/FloodRiskForm";
+import PredictionHistory from "@/components/app/PredictionHistory";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGeolocation } from "@/hooks/useGeolocation";
@@ -77,6 +79,14 @@ const AppPage = () => {
             )}
           </div>
           
+          <div id="ai-prediction-section">
+            <FloodRiskForm />
+          </div>
+
+          <div id="prediction-history-section">
+            <PredictionHistory />
+          </div>
+
           <div id="report-section">
             <UploadReport />
           </div>
